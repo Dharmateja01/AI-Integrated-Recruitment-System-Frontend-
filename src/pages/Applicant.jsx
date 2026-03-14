@@ -321,6 +321,334 @@ export default Applicant;
 
 
 
+
+
+
+// import React, { useRef, useState, useEffect } from 'react'; 
+// import axios from 'axios';
+// import { useAuth } from '../context/AuthContext';
+// import { 
+//   FileText, Clock, LogOut, X, Loader2, CheckCircle2, 
+//   TrendingUp, AlertCircle, Briefcase, Info, ExternalLink 
+// } from 'lucide-react'; 
+// import toast from 'react-hot-toast';
+
+// // --- PIZZA TRACKER COMPONENT ---
+// const StatusTracker = ({ currentStatus }) => {
+//   const stages = ["Pending", "Shortlisted", "Final Decision"];
+//   const normalizedStatus = currentStatus === "Rejected" ? "Final Decision" : currentStatus;
+//   const currentIndex = stages.indexOf(normalizedStatus);
+
+//   return (
+//     <div className="flex items-center justify-between w-full max-w-2xl mx-auto py-10 px-4">
+//       {stages.map((stage, index) => (
+//         <React.Fragment key={stage}>
+//           <div className="flex flex-col items-center relative z-10">
+//             <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 
+//               ${index <= currentIndex ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-500'}`}>
+//               {index < currentIndex ? <CheckCircle2 size={20} /> : index + 1}
+//             </div>
+//             <span className={`text-[10px] mt-3 font-bold uppercase tracking-wider ${index <= currentIndex ? 'text-blue-400' : 'text-slate-500'}`}>
+//               {stage === "Final Decision" && currentStatus === "Rejected" ? "Rejected" : stage}
+//             </span>
+//           </div>
+//           {index < stages.length - 1 && (
+//             <div className={`flex-1 h-0.5 mx-2 mb-6 ${index < currentIndex ? 'bg-blue-600' : 'bg-slate-700'}`} />
+//           )}
+//         </React.Fragment>
+//       ))}
+//     </div>
+//   );
+// };
+
+// const Applicant = () => {
+//   const { user, logout } = useAuth();
+//   const fileInputRef = useRef(null);
+//   const [selectedFile, setSelectedFile] = useState(null);
+//   const [isUploading, setIsUploading] = useState(false);
+//   const [history, setHistory] = useState(null);
+//   const [applyingFor, setApplyingFor] = useState(null);
+//   const [viewingJD, setViewingJD] = useState(null); 
+//   const [agreed, setAgreed] = useState({ terms: false, privacy: false });
+//   const [jobListings, setJobListings] = useState([]); // Dynamic state
+
+//   // --- NEW: FETCH DYNAMIC JOBS FROM DATABASE ---
+//   const fetchJobs = async () => {
+//     try {
+//       const res = await axios.get(`${process.env.REACT_APP_API_URL}/jobs`);
+//       // Map database string "Python, React" back to array for your UI tags
+//       const formattedJobs = res.data.map(job => ({
+//         ...job,
+//         role: job.role_name, // Map for your applyingFor.role logic
+//         skills: job.keywords ? job.keywords.split(',').map(s => s.trim()) : [],
+//         details: job.jd_link // Reference for the drive link
+//       }));
+//       setJobListings(formattedJobs);
+//     } catch (err) {
+//       console.error("Failed to fetch jobs:", err);
+//     }
+//   };
+
+//   const fetchHistory = async () => {
+//     try {
+//       const res = await axios.get(`${process.env.REACT_APP_API_URL}/my-application/${user.email}`);
+//       setHistory(res.data);
+//     } catch (err) {
+//       console.error("History fetch failed:", err);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (user?.email) {
+//       fetchHistory();
+//       fetchJobs(); // Fetch live jobs on load
+//     }
+//   }, [user.email]);
+
+//   const handleConfirmSubmit = async () => {
+//     if (!selectedFile || !applyingFor) return;
+//     const toastId = toast.loading("Processing Application...");
+//     setIsUploading(true);
+    
+//     const formData = new FormData();
+//     formData.append('file', selectedFile);
+//     formData.append('email', user?.email);
+//     formData.append('name', user?.name);
+//     formData.append('role', applyingFor.role);
+
+//     try {
+//       // NOTE: process.env.REACT_APP_N8N_URL should be added to your .env
+//       await axios.post(process.env.REACT_APP_N8N_URL, formData);
+//       toast.success("Application Sent!", { id: toastId });
+//       setSelectedFile(null);
+//       setApplyingFor(null);
+//       setAgreed({ terms: false, privacy: false });
+//       setTimeout(() => fetchHistory(), 2000);
+//     } catch (err) {
+//       toast.error("Upload failed", { id: toastId });
+//     } finally {
+//       setIsUploading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-slate-900 text-slate-100 p-8 font-sans relative">
+      
+//       {/* --- PROFESSIONAL JD MODAL --- */}
+//       {viewingJD && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+//           <div className="bg-slate-800 border border-slate-700 w-full max-w-xl rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
+//             <button onClick={() => setViewingJD(null)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
+//               <X size={24}/>
+//             </button>
+
+//             <div className="mb-6">
+//               <h2 className="text-3xl font-bold mb-3 text-white tracking-tight">{viewingJD.role}</h2>
+//               <div className="flex flex-wrap gap-2">
+//                  {viewingJD.skills.map(s => (
+//                    <span key={s} className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/20">
+//                      {s}
+//                    </span>
+//                  ))}
+//               </div>
+//             </div>
+
+//             <p className="text-slate-400 text-sm leading-relaxed mb-8">Role Requirements: {viewingJD.keywords}</p>
+
+//             {/* PDF ATTACHMENT SECTION (Google Drive Link) */}
+//             <div className="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-4 mb-8 flex items-center justify-between">
+//               <div className="flex items-center gap-3">
+//                 <div className="bg-red-500/20 p-2 rounded-lg">
+//                   <FileText size={20} className="text-red-400" />
+//                 </div>
+//                 <div>
+//                   <p className="text-xs font-bold text-slate-200 uppercase tracking-tighter">Official_JD_{viewingJD.role.replace(/\s+/g, '_')}.pdf</p>
+//                   <p className="text-[10px] text-slate-500">Secure Cloud Document</p>
+//                 </div>
+//               </div>
+//               <a href={viewingJD.jd_link} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-xs font-black uppercase tracking-widest flex items-center gap-1">
+//                 Download <ExternalLink size={14} />
+//               </a>
+//             </div>
+
+//             {/* LEGAL COMPULSORY CHECKBOXES */}
+//             <div className="space-y-4 mb-10">
+//               <label className="flex items-start gap-3 cursor-pointer group">
+//                 <input type="checkbox" checked={agreed.terms} onChange={() => setAgreed({...agreed, terms: !agreed.terms})} className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500" />
+//                 <span className="text-[11px] text-slate-400 leading-tight group-hover:text-slate-300 transition-colors">
+//                   I confirm that all information provided in my resume and application is accurate and truthful.
+//                 </span>
+//               </label>
+//               <label className="flex items-start gap-3 cursor-pointer group">
+//                 <input type="checkbox" checked={agreed.privacy} onChange={() => setAgreed({...agreed, privacy: !agreed.privacy})} className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500" />
+//                 <span className="text-[11px] text-slate-400 leading-tight group-hover:text-slate-300 transition-colors">
+//                   I consent to the AI-driven processing of my data for recruitment purposes as per the company's privacy policy.
+//                 </span>
+//               </label>
+//             </div>
+
+//             <button 
+//               disabled={!agreed.terms || !agreed.privacy}
+//               onClick={() => { setApplyingFor(viewingJD); setViewingJD(null); }} 
+//               className="w-full bg-blue-600 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+//             >
+//               Apply for this Position
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       <header className="flex justify-between items-center mb-8">
+//         <div>
+//            <h1 className="text-2xl font-bold text-blue-400 tracking-tight">Applicant Portal</h1>
+//            <p className="text-slate-500 text-xs">Manage your applications and AI insights</p>
+//         </div>
+//         <button onClick={logout} className="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 hover:bg-red-900/10 transition-all">
+//           <LogOut size={18}/> Logout
+//         </button>
+//       </header>
+
+//       <div className="bg-slate-800/50 border border-slate-700 rounded-3xl mb-8 p-4 shadow-2xl backdrop-blur-sm">
+//         <h3 className="text-center text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-4">Live Status Tracker</h3>
+//         <StatusTracker currentStatus={history?.status || "Pending"} />
+//       </div>
+
+//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+//         <div className="lg:col-span-1 space-y-6">
+//           {applyingFor ? (
+//             <div className="bg-blue-600/10 border border-blue-500/30 p-6 rounded-3xl shadow-xl animate-in slide-in-from-left-4 duration-500">
+//               <div className="flex justify-between items-start mb-4">
+//                 <h2 className="text-xl font-bold leading-tight">Applying for:<br/><span className="text-blue-400">{applyingFor.role}</span></h2>
+//                 <button onClick={() => setApplyingFor(null)}><X size={20} className="text-slate-500" /></button>
+//               </div>
+//               <input type="file" ref={fileInputRef} className="hidden" accept=".pdf" onChange={(e) => setSelectedFile(e.target.files[0])} />
+//               {selectedFile ? (
+//                 <div className="space-y-4">
+//                    <div className="flex items-center justify-between bg-slate-900 p-4 rounded-2xl border border-slate-700">
+//                       <span className="text-xs truncate max-w-[120px]">{selectedFile.name}</span>
+//                       <button onClick={() => setSelectedFile(null)}><X size={16} className="text-red-400" /></button>
+//                    </div>
+//                    <button onClick={handleConfirmSubmit} disabled={isUploading} className="w-full bg-blue-600 py-4 rounded-2xl font-black text-sm hover:bg-blue-500 flex items-center justify-center gap-2">
+//                      {isUploading ? <Loader2 className="animate-spin" size={18} /> : "Submit to AI Engine"}
+//                    </button>
+//                 </div>
+//               ) : (
+//                 <button onClick={() => fileInputRef.current.click()} className="w-full bg-slate-100 text-slate-900 py-4 rounded-2xl font-black text-sm hover:bg-white transition-all">
+//                   Upload Resume (PDF)
+//                 </button>
+//               )}
+//             </div>
+//           ) : (
+//             <div className="bg-slate-800 p-6 rounded-3xl border border-slate-700 h-fit">
+//               <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 mb-6">Open Opportunities</h3>
+//               <div className="space-y-4">
+//                 {jobListings.length > 0 ? jobListings.map((job) => (
+//                   <div key={job.id} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-700/50 hover:border-blue-500/40 transition-all">
+//                     <div className="flex justify-between items-center mb-2">
+//                       <h4 className="font-bold text-sm">{job.role}</h4>
+//                       <button onClick={() => setViewingJD(job)} className="text-slate-500 hover:text-blue-400 transition-colors">
+//                         <Info size={18} />
+//                       </button>
+//                     </div>
+//                     <button onClick={() => setApplyingFor(job)} className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1">
+//                       Apply Now <ExternalLink size={12} />
+//                     </button>
+//                   </div>
+//                 )) : (
+//                   <p className="text-xs text-slate-500 italic">Fetching available roles...</p>
+//                 )}
+//               </div>
+//             </div>
+//           )}
+//         </div>
+
+//         <div className="lg:col-span-2 space-y-8">
+//           {history && history.status !== "Pending" && (
+//             <div className={`p-8 rounded-3xl border shadow-2xl animate-in zoom-in-95 duration-700 ${
+//               history.status === 'Shortlisted' ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'
+//             }`}>
+//               <div className="flex items-center justify-between mb-8">
+//                 <div>
+//                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">AI Match Score</p>
+//                   <h3 className="text-3xl font-bold">{history.fit_score}% Match</h3>
+//                 </div>
+//                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+//                   history.status === 'Shortlisted' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+//                 }`}>
+//                   {history.status === 'Shortlisted' ? <TrendingUp size={28} /> : <AlertCircle size={28} />}
+//                 </div>
+//               </div>
+
+//               {history.status === 'Shortlisted' ? (
+//                 <div className="space-y-4">
+//                   <p className="text-emerald-400 font-bold flex items-center gap-2">🌟 Why the AI Shortlisted You:</p>
+//                   <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-700 text-slate-300 text-sm leading-relaxed">
+//                     {history.positives || "Your resume demonstrates perfect alignment with our core requirements."}
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="space-y-4">
+//                   <p className="text-red-400 font-bold flex items-center gap-2">🚩 Key Gaps Identified:</p>
+//                   <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-700 text-slate-300 text-sm leading-relaxed">
+//                     {history.negatives || "Our AI suggests focusing on more hands-on project experience in this specific role."}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           )}
+
+//           <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-xl overflow-hidden">
+//             <h3 className="text-lg font-bold mb-8 flex items-center gap-2 text-slate-300">
+//               <Clock size={20} className="text-blue-500" /> Active Applications
+//             </h3>
+//             <table className="w-full text-left">
+//               <thead>
+//                 <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-700">
+//                   <th className="pb-4">Applied On</th>
+//                   <th className="pb-4">Target Role</th>
+//                   <th className="pb-4 text-right">Live Status</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {history ? (
+//                   <tr className="border-b border-slate-700/40 hover:bg-slate-700/10 transition-colors">
+//                     <td className="py-6 text-sm text-slate-400">
+//                       {new Date(history.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+//                     </td>
+//                     <td className="py-6 font-bold text-sm">{history.role || "AI Developer"}</td>
+//                     <td className="py-6 text-right">
+//                       <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border ${
+//                         history.status === 'Shortlisted' ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' : 
+//                         history.status === 'Rejected' ? 'bg-red-400/10 text-red-400 border-red-400/20' : 
+//                         'bg-blue-400/10 text-blue-400 border-blue-400/20'
+//                       }`}>
+//                         {history.status}
+//                       </span>
+//                     </td>
+//                   </tr>
+//                 ) : (
+//                   <tr>
+//                     <td colSpan="3" className="py-20 text-center text-slate-500 text-sm">No applications found. Choose a role to get started.</td>
+//                   </tr>
+//                 )}
+//               </tbody>
+//             </table>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Applicant;
+
+
+
+
+
+
+
+
 // import React, { useRef, useState, useEffect } from 'react'; 
 // import axios from 'axios';
 // import { useAuth } from '../context/AuthContext';

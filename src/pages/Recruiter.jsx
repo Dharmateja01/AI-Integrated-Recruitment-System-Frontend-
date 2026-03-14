@@ -39,7 +39,7 @@ const getBaseTags = (text) => {
 const Recruiter = () => {
   const { user, logout } = useAuth();
   const [candidates, setCandidates] = useState([]);
-  const [activeJobs, setActiveJobs] = useState([]); // For role filtering
+  const [activeJobs, setActiveJobs] = useState([]);
   const [filters, setFilters] = useState({ status: 'All', role: 'All' });
   const [q, setQ] = useState('');
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -50,8 +50,8 @@ const Recruiter = () => {
   const fetchData = async () => {
     try {
       const [candRes, jobsRes] = await Promise.all([
-        axios.get(`${process.env.REACT_APP_API_URL}/candidates/`),
-        axios.get(`${process.env.REACT_APP_API_URL}/jobs`)
+        axios.get(`${import.meta.env.VITE_API_URL}/candidates/`),
+        axios.get(`${import.meta.env.VITE_API_URL}/jobs`)
       ]);
       setCandidates(candRes.data);
       setActiveJobs(jobsRes.data);
@@ -76,7 +76,7 @@ const Recruiter = () => {
 
   const onUpdateStatus = async (id, newStatus) => {
     try {
-      await axios.patch(`${process.env.REACT_APP_API_URL}/candidates/${id}/status`, { status: newStatus });
+      await axios.patch(`${import.meta.env.VITE_API_URL}/candidates/${id}/status`, { status: newStatus });
       setCandidates(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
       toast.success(`Candidate marked as ${newStatus}`);
     } catch (err) {
@@ -88,18 +88,18 @@ const Recruiter = () => {
     e.preventDefault();
     setJobLoading(true);
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/jobs`, jobForm);
+      await axios.post(`${import.meta.env.VITE_API_URL}/jobs`, jobForm);
       toast.success("Job Posted Successfully!");
       setIsAddJobOpen(false);
       setJobForm({ role_name: '', jd_link: '', keywords: '' });
-      fetchData(); // Refresh jobs list
+      fetchData();
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed to post job");
     } finally {
       setJobLoading(false);
     }
   };
-
+  
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-8">
       {/* Header */}
@@ -378,6 +378,391 @@ const Recruiter = () => {
 };
 
 export default Recruiter;
+
+
+
+
+
+// import React, { useMemo, useState, useEffect } from 'react';
+// import axios from 'axios';
+// import { useAuth } from '../context/AuthContext';
+// import { 
+//   Search, LogOut, Users, Mail, Info, X, FileText, Plus, Briefcase, Link as LinkIcon, Tags, Loader2, ChevronDown
+// } from 'lucide-react';
+// import toast from 'react-hot-toast';
+
+// // --- THE ENGINE ---
+// const getBaseTags = (text) => {
+//   if (!text || text === 'NULL' || text.trim() === '') return [];
+//   if (text.includes(',')) {
+//     return text.split(',').map(s => s.trim().charAt(0).toUpperCase() + s.trim().slice(1)).filter(s => s.length > 0);
+//   }
+//   const lower = text.toLowerCase();
+//   let tags = [];
+//   if (lower.includes('full stack') || lower.includes('full-stack') || lower.includes('fullstack')) tags.push('Full Stack');
+//   if (lower.includes('python')) tags.push('Python');
+//   if (lower.includes('javascript') || lower.includes(' js ') || lower.includes('javascript-based')) tags.push('JavaScript');
+//   if (lower.includes('react')) tags.push('React');
+//   if (lower.includes('vector')) tags.push('Vector DB');
+//   if (lower.includes('database') || lower.includes('sql')) tags.push('Database');
+//   if (lower.includes('experience') || lower.includes('years') || lower.includes('seniority')) tags.push('Experience');
+//   if (tags.length === 0) {
+//     const clean = text.replace(/[^a-zA-Z\s]/g, '').toLowerCase();
+//     const ignore = [
+//       'the','and','with','for','that','this','lack','lacks','significant',
+//       'required','explicit','proficiency','based','foundational','development',
+//       'have','has','are','not','but','from','they','their','of','in','to','a',
+//       'most','strong','demonstration','understanding','proficient','knowledge',
+//       'working','skills','using','good','very','some','any','about','more'
+//     ];
+//     const words = clean.split(/\s+/).filter(w => w.length > 4 && !ignore.includes(w));
+//     if(words.length > 0) tags.push(words[0].charAt(0).toUpperCase() + words[0].slice(1));
+//   }
+//   return [...new Set(tags)];
+// };
+
+// const Recruiter = () => {
+//   const { user, logout } = useAuth();
+//   const [candidates, setCandidates] = useState([]);
+//   const [activeJobs, setActiveJobs] = useState([]); // For role filtering
+//   const [filters, setFilters] = useState({ status: 'All', role: 'All' });
+//   const [q, setQ] = useState('');
+//   const [selectedCandidate, setSelectedCandidate] = useState(null);
+//   const [isAddJobOpen, setIsAddJobOpen] = useState(false);
+//   const [jobLoading, setJobLoading] = useState(false);
+//   const [jobForm, setJobForm] = useState({ role_name: '', jd_link: '', keywords: '' });
+
+//   const fetchData = async () => {
+//     try {
+//       const [candRes, jobsRes] = await Promise.all([
+//         axios.get(`${process.env.REACT_APP_API_URL}/candidates/`),
+//         axios.get(`${process.env.REACT_APP_API_URL}/jobs`)
+//       ]);
+//       setCandidates(candRes.data);
+//       setActiveJobs(jobsRes.data);
+//     } catch (err) {
+//       toast.error("Data synchronization failed");
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchData();
+//   }, []);
+
+//   const filtered = useMemo(() => {
+//     return candidates.filter(c => {
+//       if (filters.status !== 'All' && c.status !== filters.status) return false;
+//       if (filters.role !== 'All' && c.role !== filters.role) return false;
+//       const displayName = c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim();
+//       if (q && !(displayName.toLowerCase().includes(q.toLowerCase()) || (c.email || '').toLowerCase().includes(q.toLowerCase()))) return false;
+//       return true;
+//     });
+//   }, [candidates, filters, q]);
+
+//   const onUpdateStatus = async (id, newStatus) => {
+//     try {
+//       await axios.patch(`${process.env.REACT_APP_API_URL}/candidates/${id}/status`, { status: newStatus });
+//       setCandidates(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+//       toast.success(`Candidate marked as ${newStatus}`);
+//     } catch (err) {
+//       toast.error("Database update failed");
+//     }
+//   };
+
+//   const handlePostJob = async (e) => {
+//     e.preventDefault();
+//     setJobLoading(true);
+//     try {
+//       await axios.post(`${process.env.REACT_APP_API_URL}/jobs`, jobForm);
+//       toast.success("Job Posted Successfully!");
+//       setIsAddJobOpen(false);
+//       setJobForm({ role_name: '', jd_link: '', keywords: '' });
+//       fetchData(); // Refresh jobs list
+//     } catch (err) {
+//       toast.error(err.response?.data?.detail || "Failed to post job");
+//     } finally {
+//       setJobLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-slate-900 text-slate-100 p-8">
+//       {/* Header */}
+//       <header className="flex justify-between items-center mb-8">
+//         <h1 className="text-2xl font-bold flex items-center gap-2">
+//           <Users className="text-blue-500" /> Recruiter Dashboard
+//         </h1>
+//         <div className="flex items-center gap-4">
+//           <button 
+//             onClick={() => setIsAddJobOpen(true)}
+//             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-900/20"
+//           >
+//             <Plus size={18}/> Post Job
+//           </button>
+//           <div className="relative">
+//             <Search className="absolute left-3 top-2.5 text-slate-500" size={16} />
+//             <input 
+//               value={q} onChange={e => setQ(e.target.value)} 
+//               placeholder="Search name or email" 
+//               className="pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm w-64 outline-none focus:border-blue-500 transition-all" 
+//             />
+//           </div>
+//           <button onClick={logout} className="p-2 bg-slate-800 hover:bg-red-900/20 text-red-400 rounded-lg border border-slate-700 transition-all">
+//             <LogOut size={18}/>
+//           </button>
+//         </div>
+//       </header>
+
+//       {/* Role Filter & Status Tabs */}
+//       <div className="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+//         <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700">
+//           {["All", "Pending", "Shortlisted", "Rejected"].map(status => (
+//             <button 
+//               key={status}
+//               onClick={() => setFilters({...filters, status})}
+//               className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+//                 filters.status === status ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'
+//               }`}
+//             >
+//               {status}
+//             </button>
+//           ))}
+//         </div>
+
+//         <div className="flex items-center gap-3">
+//            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Filter by Job Role</div>
+//            <div className="relative">
+//              <select 
+//                value={filters.role}
+//                onChange={(e) => setFilters({...filters, role: e.target.value})}
+//                className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-300 outline-none focus:border-blue-500 appearance-none pr-10 cursor-pointer min-w-[200px]"
+//              >
+//                <option value="All">All Roles</option>
+//                {activeJobs.map(job => (
+//                  <option key={job.id} value={job.role_name}>{job.role_name}</option>
+//                ))}
+//              </select>
+//              <ChevronDown className="absolute right-3 top-2.5 text-slate-500 pointer-events-none" size={16}/>
+//            </div>
+//         </div>
+//       </div>
+
+//       <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-2xl">
+//         <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+//            <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em]">Applicant Manifest</span>
+//           <div className="text-xs text-slate-400 uppercase tracking-widest font-bold">
+//             {filtered.length} Matching Applications
+//           </div>
+//         </div>
+
+//         <table className="w-full text-left">
+//           <thead>
+//             <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-700/50">
+//               <th className="p-4">Candidate</th>
+//               <th className="p-4">Applied Role</th>
+//               <th className="p-4">AI Fit</th>
+//               <th className="p-4">Key Skills</th>
+//               <th className="p-4">Weaknesses</th>
+//               <th className="p-4">Status</th>
+//               <th className="p-4 text-center">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody className="divide-y divide-slate-700/30">
+//             {filtered.map((c) => {
+//               const displayName = c.name || (c.first_name ? `${c.first_name} ${c.last_name}` : 'Unknown Candidate');
+//               const fitScore = c.fit_score ?? c.overall_fit ?? c.score ?? 0;
+//               const rawStrengths = getBaseTags(c.skills || c.strengths);
+//               const rawWeaknesses = getBaseTags(c.weaknesses || c.weekness);
+//               let strengthTags = rawStrengths.slice(0, 2);
+//               let weaknessTags = rawWeaknesses.filter(tag => !strengthTags.includes(tag)).slice(0, 2);
+
+//               return (
+//                 <tr key={c.id} className="hover:bg-slate-700/20 transition-colors group">
+//                   <td className="p-4">
+//                     <div className="font-bold text-sm">{displayName}</div>
+//                     <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 group-hover:text-blue-400 transition-colors">
+//                       <Mail size={10}/> {c.email || 'No email'}
+//                     </div>
+//                   </td>
+
+//                   <td className="p-4">
+//                     <div className="text-[11px] font-bold text-slate-300">{c.role || "Full Stack AI"}</div>
+//                     <div className="text-[9px] text-slate-500 uppercase tracking-tighter">Verified Role</div>
+//                   </td>
+                  
+//                   <td className="p-4">
+//                     <div className="flex items-center gap-2">
+//                       <span className={`text-sm font-black ${fitScore >= 4 ? 'text-emerald-400' : 'text-amber-400'}`}>
+//                         {fitScore}/5
+//                       </span>
+//                       <div className="h-1 w-10 bg-slate-900 rounded-full overflow-hidden">
+//                         <div className={`h-full ${fitScore >= 4 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${(fitScore / 5) * 100}%` }} />
+//                       </div>
+//                     </div>
+//                   </td>
+
+//                   <td className="p-4">
+//                     <div className="flex flex-wrap gap-1.5">
+//                       {strengthTags.length > 0 ? strengthTags.map((tag, i) => (
+//                         <span key={i} className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-500/20">
+//                           {tag === 'Experience' ? '+Experienced' : `+${tag}`}
+//                         </span>
+//                       )) : <span className="text-[9px] text-slate-600 italic">No match</span>}
+//                     </div>
+//                   </td>
+
+//                   <td className="p-4">
+//                     <div className="flex flex-wrap gap-1.5">
+//                       {weaknessTags.length > 0 ? weaknessTags.map((tag, i) => (
+//                         <span key={i} className="text-[9px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded border border-red-500/20">
+//                           {tag === 'Experience' ? '-Low Exp.' : `-No ${tag}`}
+//                         </span>
+//                       )) : <span className="text-[9px] text-slate-600 italic">None</span>}
+//                     </div>
+//                   </td>
+
+//                   <td className="p-4">
+//                     <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${
+//                       c.status === 'Shortlisted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+//                       c.status === 'Rejected' ? 'bg-red-500/10 text-red-400 border border-red-400/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+//                     }`}>
+//                       {c.status || 'Pending'}
+//                     </span>
+//                   </td>
+
+//                   <td className="p-4">
+//                     <div className="flex items-center justify-center gap-2">
+//                       <select 
+//                         value={c.status || 'Pending'} 
+//                         onChange={(e) => onUpdateStatus(c.id, e.target.value)}
+//                         className="bg-slate-900 text-[11px] font-bold text-slate-300 border border-slate-600 rounded p-1.5 outline-none focus:border-blue-500 cursor-pointer"
+//                       >
+//                         <option value="Pending">Pending</option>
+//                         <option value="Shortlisted">Shortlist</option>
+//                         <option value="Rejected">Reject</option>
+//                       </select>
+//                       <button onClick={() => setSelectedCandidate(c)} className="p-1.5 bg-blue-600/10 text-blue-400 rounded hover:bg-blue-600 hover:text-white transition-all">
+//                         <Info size={16}/>
+//                       </button>
+//                       <a href={c.resume_link} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-slate-700 text-slate-200 text-[11px] font-bold rounded hover:bg-slate-600 flex items-center gap-1 border border-slate-600">
+//                         <FileText size={12}/> Resume
+//                       </a>
+//                     </div>
+//                   </td>
+//                 </tr>
+//               );
+//             })}
+//           </tbody>
+//         </table>
+//       </div>
+
+//       {/* POST JOB MODAL */}
+//       {isAddJobOpen && (
+//         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[60] backdrop-blur-md">
+//           <form onSubmit={handlePostJob} className="bg-slate-800 border border-slate-700 w-full max-w-md rounded-3xl p-8 shadow-2xl relative">
+//             <button type="button" onClick={() => setIsAddJobOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X size={24}/></button>
+//             <h2 className="text-2xl font-bold mb-2 flex items-center gap-2"><Briefcase className="text-blue-500"/> Post New Role</h2>
+//             <p className="text-xs text-slate-500 mb-8 font-medium">Add this job listing to the dynamic Applicant Portal.</p>
+            
+//             <div className="space-y-5">
+//               <div className="space-y-2">
+//                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Job Designation</label>
+//                 <input required className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 px-4 text-sm outline-none focus:border-blue-500"
+//                        placeholder="e.g. AI Automation Engineer" value={jobForm.role_name} 
+//                        onChange={e => setJobForm({...jobForm, role_name: e.target.value})}/>
+//               </div>
+//               <div className="space-y-2">
+//                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Direct JD Link (Google Drive)</label>
+//                 <div className="relative">
+//                   <LinkIcon className="absolute left-3 top-3.5 text-slate-600" size={16}/>
+//                   <input required className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500"
+//                          placeholder="https://drive.google.com/..." value={jobForm.jd_link} 
+//                          onChange={e => setJobForm({...jobForm, jd_link: e.target.value})}/>
+//                 </div>
+//               </div>
+//               <div className="space-y-2">
+//                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Keywords for UI Display</label>
+//                 <div className="relative">
+//                   <Tags className="absolute left-3 top-3.5 text-slate-600" size={16}/>
+//                   <input className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500"
+//                          placeholder="React, Python, n8n" value={jobForm.keywords} 
+//                          onChange={e => setJobForm({...jobForm, keywords: e.target.value})}/>
+//                 </div>
+//               </div>
+//               <button type="submit" disabled={jobLoading} className="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
+//                 {jobLoading ? <Loader2 className="animate-spin" size={18}/> : "Publish Job Role"}
+//               </button>
+//             </div>
+//           </form>
+//         </div>
+//       )}
+
+//       {/* CANDIDATE INFO MODAL */}
+//       {selectedCandidate && (
+//         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+//           <div className="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl">
+//             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+//               <div>
+//                 <h3 className="text-xl font-bold">{selectedCandidate.name || `${selectedCandidate.first_name || ''} ${selectedCandidate.last_name || ''}`}</h3>
+//                 <p className="text-sm text-blue-400">AI Deep Analysis • {selectedCandidate.role || 'General'}</p>
+//               </div>
+//               <button onClick={() => setSelectedCandidate(null)} className="p-2 hover:bg-slate-700 rounded-full text-slate-400"><X size={20}/></button>
+//             </div>
+            
+//             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+//               <section>
+//                 <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2">Hiring Justification</h4>
+//                 <div className="text-sm text-slate-300 leading-relaxed bg-blue-500/5 p-4 rounded-xl border border-blue-500/10 italic">
+//                   "{selectedCandidate.justification || 'No justification analysis available.'}"
+//                 </div>
+//               </section>
+//               <section>
+//                 <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-2">Key Skills</h4>
+//                 <div className="text-sm text-slate-400 leading-relaxed bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/10">
+//                   {selectedCandidate.skills || selectedCandidate.strengths || 'No skills recorded.'}
+//                 </div>
+//               </section>
+//               <section>
+//                 <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-2">Weaknesses Assessment</h4>
+//                 <div className="text-sm text-slate-400 leading-relaxed bg-red-500/5 p-4 rounded-xl border border-red-500/10">
+//                   {selectedCandidate.weaknesses || selectedCandidate.weekness || 'No weaknesses recorded.'}
+//                 </div>
+//               </section>
+              
+//               <div className="grid grid-cols-2 gap-4">
+//                  <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+//                     <div className="text-[8px] font-black uppercase tracking-tighter text-amber-500">Risk Factor</div>
+//                     <div className="text-xs text-slate-400">{selectedCandidate.risk_factor || 'Not assessed.'}</div>
+//                  </div>
+//                  <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+//                     <div className="text-[8px] font-black uppercase tracking-tighter text-emerald-400">Reward Factor</div>
+//                     <div className="text-xs text-slate-400">{selectedCandidate.reward_factor || 'Not assessed.'}</div>
+//                  </div>
+//                  {/* RE-INSERTED: SOFT SKILLS AND JOB STABILITY */}
+//                  <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+//                     <div className="text-[8px] font-black uppercase tracking-tighter text-blue-400">Soft Skills</div>
+//                     <div className="text-xs text-slate-400">{selectedCandidate.soft_skills || 'N/A'}</div>
+//                  </div>
+//                  <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+//                     <div className="text-[8px] font-black uppercase tracking-tighter text-purple-400">Job Stability Score</div>
+//                     <div className="text-xs text-slate-400">{selectedCandidate.job_stability_score || '0'}/10</div>
+//                  </div>
+//               </div>
+
+//               <div className="pt-4 border-t border-slate-700/50">
+//                 <a href={selectedCandidate.resume_link} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 hover:bg-slate-700 text-blue-400 text-xs font-bold rounded-xl border border-blue-500/20 transition-all">
+//                    <FileText size={14}/> View Full Candidate Resume
+//                 </a>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default Recruiter;
 
 
 
