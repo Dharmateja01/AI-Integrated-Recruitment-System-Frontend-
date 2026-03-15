@@ -92,7 +92,7 @@ const Applicant = () => {
 
     try {
       // NOTE: process.env.REACT_APP_N8N_URL should be added to your .env
-      await axios.post(process.env.REACT_APP_N8N_URL, formData);
+      await axios.post(import.meta.env.VITE_API_URL, formData);
       toast.success("Application Sent!", { id: toastId });
       setSelectedFile(null);
       setApplyingFor(null);
