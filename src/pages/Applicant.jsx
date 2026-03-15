@@ -49,7 +49,7 @@ const Applicant = () => {
   // --- NEW: FETCH DYNAMIC JOBS FROM DATABASE ---
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/jobs`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`);
       // Map database string "Python, React" back to array for your UI tags
       const formattedJobs = res.data.map(job => ({
         ...job,
@@ -65,7 +65,7 @@ const Applicant = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/my-application/${user.email}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/my-application/${user.email}`);
       setHistory(res.data);
     } catch (err) {
       console.error("History fetch failed:", err);
